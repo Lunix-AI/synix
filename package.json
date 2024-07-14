@@ -5,7 +5,7 @@
 	"type": "module",
 	"scripts": {
 		"build": "remix vite:build",
-		"dev": "remix vite:dev",
+		"dev": "concurrently \"remix vite:dev\" \"cross-env HOST=localhost PORT=1234 npx y-websocket\" --kill-others",
 		"start": "remix-serve ./build/server/index.js",
 		"typecheck": "tsc",
 		"lint": "biome lint . --write",
@@ -18,14 +18,21 @@
 		"@remix-run/serve": "^2.10.2",
 		"isbot": "^4.1.0",
 		"react": "^18.2.0",
-		"react-dom": "^18.2.0"
+		"react-dom": "^18.2.0",
+		"tldraw": "^2.3.0",
+		"y-utility": "^0.1.4",
+		"y-websocket": "^2.0.3",
+		"yjs": "^13.6.18",
+		"zustand": "^4.5.4"
 	},
 	"devDependencies": {
+		"@biomejs/biome": "^1.8.3",
 		"@remix-run/dev": "^2.10.2",
 		"@types/react": "^18.2.20",
 		"@types/react-dom": "^18.2.7",
-		"@biomejs/biome": "^1.8.3",
 		"autoprefixer": "^10.4.19",
+		"concurrently": "^8.2.2",
+		"cross-env": "^7.0.3",
 		"postcss": "^8.4.38",
 		"tailwindcss": "^3.4.4",
 		"typescript": "^5.1.6",
@@ -34,5 +41,6 @@
 	},
 	"engines": {
 		"node": ">=20.0.0"
-	}
+	},
+	"packageManager": "yarn@4.3.1"
 }
