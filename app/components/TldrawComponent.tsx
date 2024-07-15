@@ -1,45 +1,56 @@
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { Tldraw } from "tldraw";
 import { useYjsStore } from "../store/useYjsStore";
-import { HOST_URL } from "./TldrawComponent";
 import { NameEditor } from "./NameEditor";
 
 export function TldrawComponent({
 	roomData,
 	onConnectionFailed,
+	hostUrl,
 }: {
 	roomData: { roomId: string; password: string };
 	onConnectionFailed: (error: string) => void;
+	hostUrl: string;
 }) {
 	const store = useYjsStore({
 		roomId: roomData.roomId,
-		hostUrl: HOST_URL,
+		hostUrl,
 		password: roomData.password,
 	});
+
+	const handleConnectionFailed = useCallback(
+		(error: string) => {
+			onConnectionFailed(error);
+		},
+		[onConnectionFailed],
+	);
 
 	useEffect(() => {
 		if (store.status === "error") {
 			console.log(`Store status: ${store.status}`);
 			console.log(`Store error: ${store.error}`, store.error);
-			onConnectionFailed(store.error.message);
+			handleConnectionFailed(store.error.message);
 		}
-	}, [store.status, store.error, onConnectionFailed]);
+	}, [store.status, store.error, handleConnectionFailed]);
 
 	if (store.status === "error") {
 		return <div>Error: {store.error.message}</div>;
 	}
 
 	return (
-		<Tldraw
-			autoFocus
-			store={store}
-			components={{
-				SharePanel: NameEditor,
-			}}
-		/>
+		<div className="flex flex-col h-full">
+			<div className="p-4 bg-gray-100 dark:bg-gray-800">
+				<h2 className="text-xl font-semibold">Room: {roomData.roomId}</h2>
+			</div>
+			<div className="flex-grow">
+				<Tldraw
+					autoFocus
+					store={store}
+					components={{
+						SharePanel: NameEditor,
+					}}
+				/>
+			</div>
+		</div>
 	);
 }
-export const HOST_URL =
-	import.meta.env.MODE === "development"
-		? "ws://localhost:1234"
-		: "wss://your-production-url.com";

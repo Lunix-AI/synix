@@ -9,6 +9,12 @@
 			"name": "Run yarn dev",
 			"request": "launch",
 			"type": "node-terminal"
+		},
+		{
+			"command": "yarn build",
+			"name": "Build",
+			"request": "launch",
+			"type": "node-terminal"
 		}
 	]
 }

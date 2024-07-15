@@ -8,8 +8,10 @@ const abortController = new AbortController();
 const abortSignal = abortController.signal;
 
 try {
-	const port = process.env.PORT ? Number.parseInt(process.env.PORT, 10) : 1234;
-	const host = process.env.HOST || "localhost";
+	const port = process.env.YJS_PORT
+		? Number.parseInt(process.env.YJS_PORT, 10)
+		: 1234;
+	const host = process.env.HOST || "0.0.0.0";
 
 	const server = http.createServer((request, response) => {
 		response.writeHead(200, { "Content-Type": "text/plain" });

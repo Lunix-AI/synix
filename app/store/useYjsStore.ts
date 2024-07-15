@@ -22,18 +22,15 @@ import * as Y from "yjs";
 
 export function useYjsStore({
 	roomId = "example",
-	hostUrl = import.meta.env.MODE === "development"
-		? "ws://localhost:1234"
-		: "wss://demos.yjs.dev",
+	hostUrl,
 	password = "",
 	shapeUtils = [],
-}: Partial<{
+}: {
 	hostUrl: string;
 	roomId: string;
 	password: string;
-	version: number;
-	shapeUtils: TLAnyShapeUtilConstructor[];
-}>): TLStoreWithStatus {
+	shapeUtils?: TLAnyShapeUtilConstructor[];
+}): TLStoreWithStatus {
 	const [store] = useState(() => {
 		const store = createTLStore({
 			shapeUtils: [...defaultShapeUtils, ...shapeUtils],

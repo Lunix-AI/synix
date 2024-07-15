@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import { RoomEntryComponent } from "./RoomEntryComponent";
 import { TldrawComponent } from "./TldrawComponent";
 
-export function YjsExample() {
+export function YjsExample({ hostUrl }: { hostUrl: string }) {
 	const [roomData, setRoomData] = useState<{
 		roomId: string;
 		password: string;
@@ -23,6 +23,7 @@ export function YjsExample() {
 			<TldrawComponent
 				roomData={roomData}
 				onConnectionFailed={handleConnectionFailed}
+				hostUrl={hostUrl}
 			/>
 		);
 	}

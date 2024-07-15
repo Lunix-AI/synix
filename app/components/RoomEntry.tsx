@@ -41,6 +41,8 @@ export const RoomEntry = ({ onJoinRoom, error, roomData }: RoomEntryProps) => {
 					value={roomId}
 					onChange={handleRoomIdChange}
 					required
+					data-1p-ignore
+					autoComplete="off"
 				/>
 			</div>
 			<div className="space-y-2">
@@ -49,7 +51,9 @@ export const RoomEntry = ({ onJoinRoom, error, roomData }: RoomEntryProps) => {
 					id="password"
 					type="password"
 					value={password}
+					data-1p-ignore
 					onChange={handlePasswordChange}
+					autoComplete="off"
 				/>
 			</div>
 			{error && <div className="text-red-500">{error}</div>}
