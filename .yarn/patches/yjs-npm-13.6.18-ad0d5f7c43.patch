@@ -1,0 +1,33 @@
+diff --git a/package.json b/package.json
+index 16c95a9ad3907af41a902af3bfec1018faa0169c..000349395806cec5f7642e63236abf73584f3621 100644
+--- a/package.json
++++ b/package.json
+@@ -2,8 +2,8 @@
+   "name": "yjs",
+   "version": "13.6.18",
+   "description": "Shared Editing Library",
+-  "main": "./dist/yjs.cjs",
+-  "module": "./dist/yjs.mjs",
++  "main": "./src/index.js",
++  "module": "./src/index.js",
+   "types": "./dist/src/index.d.ts",
+   "type": "module",
+   "sideEffects": false,
+@@ -28,13 +28,13 @@
+   "exports": {
+     ".": {
+       "types": "./dist/src/index.d.ts",
+-      "module": "./dist/yjs.mjs",
+-      "import": "./dist/yjs.mjs",
+-      "require": "./dist/yjs.cjs"
++      "module": "./src/index.js",
++      "import": "./src/index.js",
++      "require": "./src/index.js"
+     },
+     "./src/index.js": "./src/index.js",
+     "./tests/testHelper.js": "./tests/testHelper.js",
+-    "./testHelper": "./dist/testHelper.mjs",
++    "./testHelper": "./src/testHelper.js",
+     "./package.json": "./package.json"
+   },
+   "files": [

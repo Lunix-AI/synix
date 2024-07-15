@@ -1,0 +1,13 @@
+diff --git a/package.json b/package.json
+index eb42614b9531de995294944c54b01a38efc659b6..1a3a54f312fc0fe4de33ccd7d23216bbaf5d04d4 100644
+--- a/package.json
++++ b/package.json
+@@ -3,7 +3,7 @@
+   "version": "9.0.12",
+   "description": "IndexedDB database adapter for Yjs",
+   "type": "module",
+-  "main": "./dist/y-indexeddb.cjs",
++  "main": "./src/y-indexeddb.cjs",
+   "module": "./src/y-indexeddb.js",
+   "types": "./dist/src/y-indexeddb.d.ts",
+   "sideEffects": false,

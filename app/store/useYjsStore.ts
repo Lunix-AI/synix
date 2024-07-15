@@ -25,10 +25,12 @@ export function useYjsStore({
 	hostUrl = import.meta.env.MODE === "development"
 		? "ws://localhost:1234"
 		: "wss://demos.yjs.dev",
+	password = "",
 	shapeUtils = [],
 }: Partial<{
 	hostUrl: string;
 	roomId: string;
+	password: string;
 	version: number;
 	shapeUtils: TLAnyShapeUtilConstructor[];
 }>): TLStoreWithStatus {
@@ -50,13 +52,45 @@ export function useYjsStore({
 		const yStore = new YKeyValue<TLRecord>(yArr);
 		const meta = yDoc.getMap<SerializedSchema>("meta");
 
+		const provider = new WebsocketProvider(
+			hostUrl,
+			`${roomId}?password=${password}`,
+			yDoc,
+			{
+				connect: false,
+			},
+		);
+
+		// provider.on("connect", () => {
+		// 	console.log("Connected to yjs");
+		// });
+		// provider.on("connection-error", (params: unknown) => {
+		// 	console.error("Failed to connect to yjs", params);
+		// 	provider.shouldConnect = false;
+		// });
+		// provider.on("connection-close", () => {
+		// 	console.error("Connection closed to yjs");
+		// 	provider.shouldConnect = false;
+		// });
+		// provider.on("disconnect", () => {
+		// 	console.log("Disconnected from yjs");
+		// });
+
+		// console.log("Connecting to yjs", provider.ws);
+		// try connecting once, if fails, alert the user
+		provider.connect();
+
+		// setTimeout(() => {
+		// 	provider.destroy();
+		// }, 1000);
+
 		return {
 			yDoc,
 			yStore,
 			meta,
-			room: new WebsocketProvider(hostUrl, roomId, yDoc, { connect: true }),
+			room: provider,
 		};
-	}, [hostUrl, roomId]);
+	}, [hostUrl, roomId, password]);
 
 	useEffect(() => {
 		setStoreWithStatus({ status: "loading" });
@@ -309,6 +343,7 @@ export function useYjsStore({
 		}: {
 			status: "disconnected" | "connected";
 		}) {
+			console.log(`Status change: ${status}`);
 			// If we're disconnected, set the store status to 'synced-remote' and the connection status to 'offline'
 			if (status === "disconnected") {
 				setStoreWithStatus({
@@ -331,6 +366,20 @@ export function useYjsStore({
 
 		room.on("status", handleStatusChange);
 		unsubs.push(() => room.off("status", handleStatusChange));
+
+		const connectionError = (error: Error) => {
+			if (!hasConnectedBefore) {
+				room.shouldConnect = false;
+				setStoreWithStatus({
+					status: "error",
+					error,
+				});
+			}
+		};
+
+		room.on("connection-error", connectionError);
+		unsubs.push(() => room.off("connection-error", connectionError));
+
 		return () => {
 			for (const fn of unsubs) {
 				fn();
