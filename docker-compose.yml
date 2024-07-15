@@ -10,6 +10,6 @@ services:
       - YJS_PORT=1234
       - HOST=0.0.0.0
       - NODE_ENV=production
-      - HOST_URL=http://localhost:1234
+      - HOST_URL=${HOST_URL:-http://localhost:1234}
     volumes:
       - ./storage-location:/usr/src/app/storage-location
