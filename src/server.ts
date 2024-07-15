@@ -23,24 +23,61 @@ try {
 
 	const rooms = new Map<string, { doc: Y.Doc; password?: string }>();
 
-	const verifyRoom = (
+	const ldb = new LeveldbPersistence("./storage-location");
+
+	abortSignal.addEventListener("abort", () => {
+		console.log("Aborting leveldb");
+		ldb.destroy();
+	});
+
+	const manageRoomData = async (roomName: string, password = "") => {
+		const key = `room:${roomName}`;
+		let doc: Y.Doc;
+
+		try {
+			doc = await ldb.getYDoc(key);
+		} catch {
+			console.log(`No existing room data for room ${roomName}?`);
+			doc = new Y.Doc();
+		}
+
+		const roomData = doc.getMap<string>("roomData");
+		const existingPassword = roomData.get("password") ?? "";
+
+		if (!existingPassword && password) {
+			roomData.set("password", password);
+			await ldb.storeUpdate(key, Y.encodeStateAsUpdate(doc));
+			return { password };
+		}
+
+		return { password: existingPassword };
+	};
+
+	const verifyRoom = async (
 		url: URL,
 		remoteAddress: string,
-	): { isValid: boolean; room?: { doc: Y.Doc; password?: string } } => {
+	): Promise<{
+		isValid: boolean;
+		room?: { doc: Y.Doc; password?: string };
+	}> => {
 		const password = url.searchParams.get("password") || "";
 		const roomName = url.pathname.split("/").pop() || "default";
 
 		let room = rooms.get(roomName);
 
 		if (!room) {
+			const roomData = await manageRoomData(roomName, password);
 			const doc = new Y.Doc();
-			room = { doc, password };
+			room = { doc, password: roomData.password };
 			rooms.set(roomName, room);
-		} else if (password !== room.password) {
-			console.log(
-				`Invalid password for room ${roomName} by user ${remoteAddress}, was ${JSON.stringify(password)} but should be ${JSON.stringify(room.password)}.`,
-			);
-			return { isValid: false };
+		} else {
+			const roomData = await manageRoomData(roomName);
+			if (password !== roomData.password) {
+				console.log(
+					`Invalid password for room ${roomName} by user ${remoteAddress}, was ${JSON.stringify(password)} but should be ${JSON.stringify(roomData.password)}.`,
+				);
+				return { isValid: false };
+			}
 		}
 
 		console.log(`Valid password for room ${roomName} by user ${remoteAddress}`);
@@ -49,38 +86,11 @@ try {
 
 	const wss = new ws.Server({
 		noServer: true,
-		verifyClient: (info, cb) => {
-			const url = new URL(info.req.url || "", `ws://${host}:${port}`);
-			const { isValid, room } = verifyRoom(
-				url,
-				info.req.socket.remoteAddress || "",
-			);
-
-			if (!isValid) {
-				cb(false, 401, "Unauthorized", {
-					"Content-Type": "application/json",
-					"Access-Control-Allow-Origin": "*",
-					"Access-Control-Allow-Credentials": "true",
-					"Access-Control-Allow-Headers": "Content-Type, Authorization",
-					"Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-				});
-				return;
-			}
-
-			cb(true);
-		},
 	});
 
 	abortSignal.addEventListener("abort", () => {
 		console.log("Aborting wss");
 		wss.close();
-	});
-
-	const ldb = new LeveldbPersistence("./storage-location");
-
-	abortSignal.addEventListener("abort", () => {
-		console.log("Aborting leveldb");
-		ldb.destroy();
 	});
 
 	setPersistence({
@@ -105,9 +115,9 @@ try {
 		setupWSConnection(conn, req, { docName: roomName });
 	});
 
-	server.on("upgrade", (request, socket, head) => {
+	server.on("upgrade", async (request, socket, head) => {
 		console.log("Upgrade connection");
-		const result = verifyRoom(
+		const result = await verifyRoom(
 			new URL(request.url || "", `ws://${host}:${port}`),
 			request.socket.remoteAddress || "",
 		);
@@ -128,17 +138,8 @@ try {
 			return;
 		}
 
-		wss.handleUpgrade(request, socket, head, (ws) => {
-			console.log("Upgrade connection");
-			const result = verifyRoom(
-				new URL(request.url || "", `ws://${host}:${port}`),
-				request.socket.remoteAddress || "",
-			);
-			if (result.isValid) {
-				wss.emit("connection", ws, request);
-			} else {
-				ws.close(4000, "authentication failed");
-			}
+		wss.handleUpgrade(request, socket, head, async (ws) => {
+			wss.emit("connection", ws, request);
 		});
 	});
 

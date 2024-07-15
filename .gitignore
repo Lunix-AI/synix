@@ -4,3 +4,4 @@ node_modules
 /build
 .env
 storage-location
+.yarn/install-state.gz
