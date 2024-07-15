@@ -23,5 +23,8 @@ RUN yarn build
 # Expose the ports the app runs on
 EXPOSE 3000 1234
 
+# Print environment variables for debugging
+RUN env | sort
+
 # Start both the server and the Remix app
 CMD ["yarn", "start"]
