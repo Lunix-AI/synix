@@ -18,7 +18,7 @@ export const loader: LoaderFunction = async () => {
 	console.log("HOST_URL:", process.env.HOST_URL);
 	return json({
 		ENV: {
-			HOST_URL: process.env.HOST_URL || "http://localhost:1234",
+			HOST_URL: process.env.HOST_URL ?? "http://localhost:1234",
 		},
 	});
 };
