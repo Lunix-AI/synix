@@ -14,8 +14,6 @@ export const meta: MetaFunction = () => {
 };
 
 export const loader: LoaderFunction = async () => {
-	console.log("All environment variables:", process.env);
-	console.log("HOST_URL:", process.env.HOST_URL);
 	return json({
 		ENV: {
 			HOST_URL: process.env.HOST_URL ?? "http://localhost:1234",
