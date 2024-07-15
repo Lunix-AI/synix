@@ -31,7 +31,7 @@ export function useYjsStore({
 	roomId: string;
 	version: number;
 	shapeUtils: TLAnyShapeUtilConstructor[];
-}>) {
+}>): TLStoreWithStatus {
 	const [store] = useState(() => {
 		const store = createTLStore({
 			shapeUtils: [...defaultShapeUtils, ...shapeUtils],
@@ -87,7 +87,10 @@ export function useYjsStore({
 							}
 						});
 					},
-					{ source: "user", scope: "document" }, // only sync user's document changes
+					{
+						source: "user",
+						scope: "document",
+					}, // only sync user's document changes
 				),
 			);
 
@@ -135,52 +138,20 @@ export function useYjsStore({
 			/* -------------------- Awareness ------------------- */
 
 			const yClientId = room.awareness.clientID.toString();
-			const userPreferencesMap = yDoc.getMap("userPreferences");
-
-			// Initialize user preferences if they don't exist
-			if (!userPreferencesMap.get(yClientId)) {
-				userPreferencesMap.set(yClientId, {
-					id: yClientId,
-					color: defaultUserPreferences.color,
-					name: defaultUserPreferences.name,
-				});
-			}
 
 			const userPreferences = computed<{
 				id: string;
 				color: string;
 				name: string;
 			}>("userPreferences", () => {
-				const preferences = userPreferencesMap.get(yClientId) as {
-					id: string;
-					color: string;
-					name: string;
-				};
+				const external = getUserPreferences();
+
 				return {
-					id: preferences.id,
-					color: preferences.color,
-					name: preferences.name,
+					id: yClientId,
+					color: external.color ?? defaultUserPreferences.color,
+					name: external.name ?? defaultUserPreferences.name,
 				};
 			});
-
-			// Update the setUserPreferences function
-			const setUserPreferences = (
-				newPreferences: Partial<{
-					id: string;
-					color: string;
-					name: string;
-				}>,
-			) => {
-				const currentPreferences = userPreferencesMap.get(yClientId) as {
-					id: string;
-					color: string;
-					name: string;
-				};
-				userPreferencesMap.set(yClientId, {
-					...currentPreferences,
-					...newPreferences,
-				});
-			};
 
 			// Create the instance presence derivation
 			const presenceId = InstancePresenceRecordType.createId(yClientId);
@@ -196,6 +167,7 @@ export function useYjsStore({
 			unsubs.push(
 				react("when presence changes", () => {
 					const presence = presenceDerivation.get();
+
 					requestAnimationFrame(() => {
 						room.awareness.setLocalStateField("presence", presence);
 					});
@@ -203,7 +175,7 @@ export function useYjsStore({
 			);
 
 			// Sync yjs awareness changes to the store
-			const handleUpdate = (update: {
+			const handleYjsAwarenessUpdate = (update: {
 				added: number[];
 				updated: number[];
 				removed: number[];
@@ -240,7 +212,9 @@ export function useYjsStore({
 				// put / remove the records in the store
 				store.mergeRemoteChanges(() => {
 					if (toRemove.length) store.remove(toRemove);
-					if (toPut.length) store.put(toPut);
+					if (toPut.length) {
+						store.put(toPut);
+					}
 				});
 			};
 
@@ -257,11 +231,12 @@ export function useYjsStore({
 					yDoc.destroy();
 				}
 			};
+
 			meta.observe(handleMetaUpdate);
 			unsubs.push(() => meta.unobserve(handleMetaUpdate));
 
-			room.awareness.on("update", handleUpdate);
-			unsubs.push(() => room.awareness.off("update", handleUpdate));
+			room.awareness.on("update", handleYjsAwarenessUpdate);
+			unsubs.push(() => room.awareness.off("update", handleYjsAwarenessUpdate));
 
 			// 2.
 			// Initialize the store with the yjs doc records—or, if the yjs doc
@@ -284,6 +259,7 @@ export function useYjsStore({
 						records.map((record) => [record.id, record]),
 					),
 				});
+
 				if (migrationResult.type === "error") {
 					// if the schema is newer than ours, the user must refresh
 					console.error(migrationResult.reason);
